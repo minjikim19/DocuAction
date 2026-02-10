@@ -2,3 +2,10 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.6
 pypdf==5.1.0
 python-multipart==0.0.12
+langchain
+langchain-community
+langchain-text-splitters
+faiss-cpu
+openai
+python-dotenv
+tiktoken
