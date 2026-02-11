@@ -1,2 +1,2 @@
 # DocuAction
- LLM-powered document automation tool that turns PDFs into actionable outputs with retrieval grounding.
+ LLM-based document automation prototype that converts PDFs into summaries, action items, schedules, and draft emails using RAG and structured JSON outputs.
