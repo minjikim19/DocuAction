@@ -70,6 +70,7 @@ async def hello_pdf(file: UploadFile | None = File(default=None)):
             "pages": pages,
             "text_chars": len(full_text),
             "preview": full_text[:300],
+            "full_text": full_text,
         }
     except Exception:
         return JSONResponse(status_code=400, content={"error": "invalid pdf"})
