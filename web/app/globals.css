@@ -13,25 +13,27 @@ body {
 
 .container {
   max-width: 920px;
-  margin: 48px auto;
-  padding: 0 16px 40px;
+  margin: 56px auto;
+  padding: 0 16px 56px;
 }
 
 h1 {
-  margin: 0 0 20px;
+  margin: 0 0 24px;
 }
 
 .uploadCard,
 .resultCard {
   background: #ffffff;
   border: 1px solid #dbe2ec;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 6px 20px rgba(20, 38, 70, 0.06);
+  overflow: hidden;
 }
 
 .uploadCard {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 label {
@@ -116,9 +118,9 @@ button:disabled {
 }
 
 .resultsWrap {
-  margin-top: 16px;
+  margin-top: 24px;
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .resultsHeader {
@@ -158,7 +160,7 @@ table {
 th,
 td {
   text-align: left;
-  padding: 10px;
+  padding: 12px 10px;
   border-bottom: 1px solid #e6ecf4;
   vertical-align: top;
 }
@@ -166,6 +168,10 @@ td {
 th {
   font-size: 13px;
   color: #41536b;
+}
+
+tbody tr:hover {
+  background: #f6faff;
 }
 
 .badge {
@@ -194,14 +200,15 @@ th {
 
 .scheduleList {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .scheduleItem {
-  border: 1px solid #e3e9f2;
-  border-radius: 10px;
-  padding: 12px;
-  background: #fbfcff;
+  border: 1px solid #dde6f3;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f9fbff;
+  box-shadow: 0 4px 14px rgba(20, 38, 70, 0.05);
 }
 
 .scheduleHead {
@@ -218,34 +225,45 @@ th {
 
 .emailBody {
   border: 1px solid #e3e9f2;
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 14px;
   background: #fbfcff;
   white-space: pre-wrap;
   line-height: 1.5;
 }
 
 details {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 summary {
   cursor: pointer;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+details[open] {
+  margin-top: 14px;
+}
+
+details[open] > *:not(summary) {
+  animation: detailsFadeIn 180ms ease-out;
 }
 
 details ul {
-  margin: 8px 0 0;
-  padding-left: 18px;
+  margin: 10px 0 0;
+  padding-left: 0;
+  list-style: none;
 }
 
 details li {
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   line-height: 1.4;
 }
 
 .contextSection {
-  margin-top: 16px;
+  margin-top: 24px;
 }
 
 .contextHeader {
@@ -302,21 +320,67 @@ details li {
 }
 
 .sourceLink {
-  border: 0;
-  padding: 0;
-  background: none;
-  color: #1a5ed1;
-  text-decoration: underline;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #d7e1ef;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #eef3fb;
+  color: #2b425e;
+  text-decoration: none;
   cursor: pointer;
   font: inherit;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .sourceLink:hover {
-  color: #0f46a8;
+  background: #e1eaf7;
+  border-color: #c8d7ec;
+  color: #1f3550;
+}
+
+.sourcesBlock {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.sourcesBlock ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sourcesBlock li {
+  margin: 8px 0;
+  padding: 0;
+}
+
+.sourcesBlock .sourceLink {
+  display: block;
+  width: 100%;
+  text-align: left;
 }
 
 .muted {
   margin: 0;
   color: #5f6f84;
+}
+
+@keyframes detailsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

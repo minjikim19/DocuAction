@@ -120,7 +120,19 @@ function computeMatchScore(sourceKey: string, chunkText: string): number {
     }
   }
 
-  return score + shared;
+  score += shared;
+
+  const coverageRatio = Math.min(
+    1,
+    Math.max(0, sourceKey.length / Math.max(chunkText.length, 1))
+  );
+  if (coverageRatio > 0.6) {
+    score += 20;
+  } else if (coverageRatio > 0.4) {
+    score += 10;
+  }
+
+  return score;
 }
 
 function findBestChunkId(sourceKey: string, chunks: ClientChunk[]): number {
@@ -165,7 +177,9 @@ export default function HomePage() {
   const [selectedChunkId, setSelectedChunkId] = useState<number | null>(null);
   const [highlightChunkId, setHighlightChunkId] = useState<number | null>(null);
   const [contextWarning, setContextWarning] = useState<string>("");
+  const [showRawJson, setShowRawJson] = useState(false);
   const highlightTimeoutRef = useRef<number | null>(null);
+  const resultsRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -176,10 +190,17 @@ export default function HomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (automateResult && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [automateResult]);
+
   const resetContextState = () => {
     setDocId("");
     setChunks(null);
     setAutomateResult(null);
+    setShowRawJson(false);
     setExtractedText("");
     setClientChunks([]);
     setSelectedChunkId(null);
@@ -205,7 +226,7 @@ export default function HomePage() {
     }, 2000);
   };
 
-  const handleSourceClick = (source: string) => {
+  const handleSourceClick = (source: string, detailsId?: string) => {
     if (clientChunks.length === 0) {
       if (extractedText.length > MAX_CONTEXT_TEXT_LENGTH) {
         setContextWarning(
@@ -225,10 +246,16 @@ export default function HomePage() {
     const matchScore = matchedChunk
       ? computeMatchScore(sourceKey, matchedChunk.norm)
       : 0;
+    if (detailsId) {
+      const details = document.getElementById(detailsId);
+      if (details instanceof HTMLDetailsElement) {
+        details.open = true;
+      }
+    }
 
     if (matchScore === 0) {
       setContextWarning(
-        "Could not find an exact source match. Jumped to the first chunk.",
+        "Could not find an exact source match. Closest match shown instead.",
       );
     } else {
       setContextWarning("");
@@ -392,7 +419,14 @@ export default function HomePage() {
             onClick={handleIndexPdf}
             disabled={!selectedFile || isIndexing}
           >
-            {isIndexing ? "Indexing..." : "Index PDF"}
+            {isIndexing ? (
+              <>
+                <span className="btnSpinner" aria-hidden="true" />
+                Indexing...
+              </>
+            ) : (
+              "Index PDF"
+            )}
           </button>
 
           <button
@@ -400,7 +434,14 @@ export default function HomePage() {
             onClick={handleGenerateActions}
             disabled={!docId || isGenerating}
           >
-            {isGenerating ? "Generating..." : "Generate Actions"}
+            {isGenerating ? (
+              <>
+                <span className="btnSpinner" aria-hidden="true" />
+                Generating...
+              </>
+            ) : (
+              "Generate Actions"
+            )}
           </button>
         </div>
 
@@ -457,6 +498,8 @@ export default function HomePage() {
                 id={`chunk-${chunk.id}`}
                 key={chunk.id}
                 className={`chunkBlock ${highlightChunkId === chunk.id ? "chunkHighlight" : ""}`}
+                onClick={() => highlightAndScrollToChunk(chunk.id)}
+                style={{ cursor: "pointer" }}
               >
                 <h4>Chunk #{chunk.id + 1}</h4>
                 <pre>{chunk.text}</pre>
@@ -465,15 +508,23 @@ export default function HomePage() {
           ) : (
             <p className="muted">
               {extractedText
-                ? "No chunked context available."
-                : "Index a PDF to view document context chunks."}
+                ? "Document loaded but no previewable chunks were found."
+                : "Upload and index a PDF to explore document context."}
             </p>
           )}
         </div>
       </section>
 
+      {isIndexing || isGenerating ? (
+        <p className="muted" style={{ marginTop: 12 }}>
+          {isIndexing
+            ? "Processing document..."
+            : "Generating action items..."}
+        </p>
+      ) : null}
+
       {automateResult ? (
-        <section className="resultsWrap">
+        <section className="resultsWrap" ref={resultsRef}>
           <header className="resultsHeader">
             <h2>Generated Output</h2>
             <p>
@@ -517,22 +568,26 @@ export default function HomePage() {
               </table>
             </div>
             {automateResult.action_items.map((item, index) => (
-              <details key={`action-sources-${index}`}>
-                <summary>Sources for action item #{index + 1}</summary>
-                <ul>
-                  {item.sources?.map((source, sourceIndex) => (
-                    <li key={`action-source-${index}-${sourceIndex}`}>
-                      <button
-                        type="button"
-                        className="sourceLink"
-                        onClick={() => handleSourceClick(source)}
-                      >
-                        {truncate(source)}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </details>
+              <div className="sourcesBlock" key={`action-sources-${index}`}>
+                <details id={`action-details-${index}`}>
+                  <summary>Sources for action item #{index + 1}</summary>
+                  <ul>
+                    {item.sources?.map((source, sourceIndex) => (
+                      <li key={`action-source-${index}-${sourceIndex}`}>
+                        <button
+                          type="button"
+                          className="sourceLink"
+                          onClick={() =>
+                            handleSourceClick(source, `action-details-${index}`)
+                          }
+                        >
+                          {truncate(source)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
             ))}
           </section>
 
@@ -549,7 +604,7 @@ export default function HomePage() {
                     <span>{item.time || "No time"}</span>
                   </p>
                   <p>{item.description}</p>
-                  <details>
+                  <details id={`schedule-details-${index}`}>
                     <summary>Sources</summary>
                     <ul>
                       {item.sources?.map((source, sourceIndex) => (
@@ -557,7 +612,12 @@ export default function HomePage() {
                           <button
                             type="button"
                             className="sourceLink"
-                            onClick={() => handleSourceClick(source)}
+                            onClick={() =>
+                              handleSourceClick(
+                                source,
+                                `schedule-details-${index}`,
+                              )
+                            }
                           >
                             {truncate(source)}
                           </button>
@@ -576,7 +636,7 @@ export default function HomePage() {
               <strong>Subject:</strong> {automateResult.email_draft.subject}
             </p>
             <div className="emailBody">{automateResult.email_draft.body}</div>
-            <details>
+            <details id="email-details">
               <summary>Sources</summary>
               <ul>
                 {automateResult.email_draft.sources?.map((source, index) => (
@@ -584,7 +644,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       className="sourceLink"
-                      onClick={() => handleSourceClick(source)}
+                      onClick={() => handleSourceClick(source, "email-details")}
                     >
                       {truncate(source)}
                     </button>
@@ -593,8 +653,40 @@ export default function HomePage() {
               </ul>
             </details>
           </section>
+
+          <section className="resultCard">
+            <button
+              type="button"
+              onClick={() => setShowRawJson((prev) => !prev)}
+              style={{ marginBottom: showRawJson ? 10 : 0 }}
+            >
+              Show Raw JSON
+            </button>
+            {showRawJson ? (
+              <pre>{JSON.stringify(automateResult, null, 2)}</pre>
+            ) : null}
+          </section>
         </section>
       ) : null}
+      <style jsx>{`
+        .btnSpinner {
+          width: 12px;
+          height: 12px;
+          border: 2px solid rgba(255, 255, 255, 0.5);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          display: inline-block;
+          margin-right: 8px;
+          vertical-align: -2px;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </main>
   );
 }
